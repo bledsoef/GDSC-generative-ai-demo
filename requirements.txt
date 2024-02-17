@@ -7,3 +7,4 @@ openai
 langchain==0.0.123
 pinecone-client
 pathlib
+google-generativeai

@@ -13,13 +13,16 @@ from makechain import makeChain
 from openai import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 import os
+import google.generativeai as genai
 
 
 # Environement variable setup
 env_path = Path('../') / '.env'
 dotenv.load_dotenv()
 
-class TrainedAI:
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+class OpenAITrained:
     def __init__(self, chat_history):
         """
         Set up of basic configurations for openai calls
@@ -48,7 +51,7 @@ class TrainedAI:
 
 
 # Load your API key from an environment variable or secret management service
-class UntrainedAI:
+class OpenAIUntrained:
     def __init__(self):
         '''
         Initializes the AI object with default values for its attributes.
@@ -72,3 +75,41 @@ class UntrainedAI:
         response = self.client.chat.completions.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": question}])
 
         return response.choices[0].message.content
+
+class GeminiAI:
+    def __init__(self):
+        self.generation_config = {
+            "temperature": 0.9,
+            "top_p": 1,
+            "top_k": 1,
+            "max_output_tokens": 2048,
+                            }
+
+        self.safety_settings = [
+        {
+            "category": "HARM_CATEGORY_HARASSMENT",
+            "threshold": "BLOCK_ONLY_HIGH"
+        },
+        {
+            "category": "HARM_CATEGORY_HATE_SPEECH",
+            "threshold": "BLOCK_ONLY_HIGH"
+        },
+        {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_ONLY_HIGH"
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_ONLY_HIGH"
+        },
+        ]
+
+        self.model = genai.GenerativeModel(model_name="gemini-1.0-pro",
+                                    generation_config=self.generation_config,
+                                    safety_settings=self.safety_settings)
+
+        self.convo = self.model.start_chat(history=[])
+
+    def response(self, message):
+        self.convo.send_message(message)
+        return self.convo.last.text
