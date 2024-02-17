@@ -8,47 +8,20 @@ from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 import pinecone
-from makechain import makeChain
-
 from openai import OpenAI
 from langchain.chains import ConversationalRetrievalChain
 import os
 import google.generativeai as genai
 
+import vertexai
+from vertexai.preview.generative_models import GenerativeModel, Part
+import vertexai.preview.generative_models as generative_models
 
 # Environement variable setup
 env_path = Path('../') / '.env'
 dotenv.load_dotenv()
 
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-class OpenAITrained:
-    def __init__(self, chat_history):
-        """
-        Set up of basic configurations for openai calls
-        """
-        self.chat_history = chat_history
-        # gets the pinecone index as a reference
-        pinecone.init(api_key=os.environ["PINECONE_API_KEY"], environment=os.environ["PINECONE_ENVIRONMENT"])
-        vectorStore:Pinecone = Pinecone.from_existing_index(index_name=os.environ["PINECONE_INDEX_NAME"], embedding=OpenAIEmbeddings())
-        self.qa = makeChain(vectorStore=vectorStore)
-        # use davinci model, but TODO: use gpt-4
-        self.model = 'text-davinci-003'
-
-        # temperature governs the creativity of the responses
-        self.temperature = .95
-
-        self.max_token = 50
-
-    def respond(self, text: str) -> str:
-        """
-        Takes in user input and returns AI response
-        :param text: User input
-        :return: AI Response
-        """
-        result = self.qa._call({'question':text, 'chat_history':self.chat_history or [], 'context':""})
-        return result["answer"]
-
 
 # Load your API key from an environment variable or secret management service
 class OpenAIUntrained:
@@ -113,3 +86,48 @@ class GeminiAI:
     def response(self, message):
         self.convo.send_message(message)
         return self.convo.last.text
+
+class VertexAI:
+    def __init__(self):
+        '''
+        Initializes the AI object with default values for its attributes.
+        '''
+        
+
+def generate():
+    def __init__():
+        vertexai.init(project="gdsc-generative-ai-demo", location="us-central1")
+        model = GenerativeModel("gemini-pro-vision")
+        responses = model.generate_content(
+        [],
+        generation_config={
+            "max_output_tokens": 2048,
+            "temperature": 0.4,
+            "top_p": 1,
+            "top_k": 32
+        },
+        safety_settings={
+                generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        },
+        stream=True,
+        )
+
+        for response in responses:
+            print(response.text, end="")
+
+
+        generate()
+
+    
+    def respond(self, question):
+        '''
+        Takes a message, attached to a prompt and returns a more professional version of the message.
+        '''
+
+        # Construct a prompt for the API to transform the message into a formal statement.
+        response = self.client.chat.completions.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": question}])
+
+        return response.choices[0].message.content

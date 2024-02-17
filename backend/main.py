@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware  # Import the CORS middleware
 from mangum import Mangum
 import uvicorn
-from ai import OpenAITrained, OpenAIUntrained, GeminiAI
+from ai import OpenAIUntrained, GeminiAI
 
 app = FastAPI()
 
@@ -21,12 +21,6 @@ async def openai_basic(request: Request):
     ai = OpenAIUntrained()
     response = ai.respond(question)
     return response
-
-@app.post("/openai_trained")
-async def openai_trained(request: Request):
-    data = await request.json()
-    question = data.get("message")
-    ai = OpenAITrained()
 
 @app.post("/gemini")
 async def gemini(request: Request):
